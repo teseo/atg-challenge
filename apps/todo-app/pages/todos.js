@@ -9,13 +9,15 @@ import {
   Container,
   Button,
   Box,
+  Paper,
+  Grid2 as Grid,
 } from "@mui/material"
 
 export default function TodosPage({ todos, error }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [todosList, setTodosList] = useState([])
   const [todosPaged, setTodosPaged] = useState([])
-  const [todosPerPage] = useState(10)
+  const [todosPerPage] = useState(9)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -103,23 +105,37 @@ export default function TodosPage({ todos, error }) {
         TODOs List
       </Typography>
 
-      <List>
+      <Grid container spacing={2}>
         {todosPaged.map((todo, index) => (
-          <ListItem key={index} disablePadding>
-            <ThemedCheckbox
-              checked={todo.completed}
-              onChange={() =>
-                handleCheckboxChange(todo.id, todo.task, todo.completed)
-              }
-              disabled={loading}
-            />
-            <ListItemText
-              primary={todo.task}
-              secondary={todo.completed ? "Completed" : "Pending"}
-            />
-          </ListItem>
+          <Grid key={index} size={{ xs: 6, md: 4, xl: 3 }}>
+            <Paper>
+              <Box
+                style={{
+                  width: "100%",
+                  height: "200px",
+                  backgroundImage: `url(${todo.image})`,
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "cover",
+                }}
+              ></Box>
+              <ListItem>
+                <ThemedCheckbox
+                  checked={todo.completed}
+                  onChange={() =>
+                    handleCheckboxChange(todo.id, todo.task, todo.completed)
+                  }
+                  disabled={loading}
+                />
+                <ListItemText
+                  primary={todo.task}
+                  secondary={todo.completed ? "Completed" : "Pending"}
+                />
+              </ListItem>
+            </Paper>
+          </Grid>
         ))}
-      </List>
+      </Grid>
 
       <Box mt={2}>
         <ThemedButton
