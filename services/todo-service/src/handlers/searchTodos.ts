@@ -5,6 +5,7 @@ import {
 import { ScanCommand } from "@aws-sdk/client-dynamodb"
 import { dynamoDb } from "../lib/dynamodb"
 import { ScanCommandInput } from "@aws-sdk/lib-dynamodb"
+import { unmarshall } from "@aws-sdk/util-dynamodb"
 
 const tableName = process.env.TABLE_NAME
 
@@ -63,7 +64,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           return {
             statusCode: statusCode,
             body: result
-              ? JSON.stringify((result as Record<string, any>).Items)
+              ? JSON.stringify(
+                  (result as Record<string, any>).Items?.map((item) =>
+                    unmarshall(item)
+                  )
+                )
               : JSON.stringify({ error: "No items found" }),
           }
         })

@@ -1,6 +1,6 @@
 # ATG Engineering
 
-## Interview Challenge
+## Serverless Challenge
 
 ### Before you begin
 
@@ -12,10 +12,11 @@ npm install -g pnpm
 
 ### Setup
 
-- Run `pnpm -r install` from the project root directory
+- Run `pnpm install`
+- Run `pnpm run install:dynamodb`
 - Run `pnpm run dev`
 
-You should now be able to connect to the application via HTTP, e.g. `http://localhost:3000/todos` and to the API via `http://localhost:3001/dev/todos`
+You should now be able to connect to the application via HTTP, e.g. `http://localhost:3000/dev/todos`
 
 ### Additional Resources
 
