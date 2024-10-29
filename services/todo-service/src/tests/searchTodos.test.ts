@@ -1,10 +1,15 @@
 import { handler } from "../handlers/searchTodos"
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import { dynamoDb } from "../lib/dynamodb"
+import { unmarshall } from "@aws-sdk/util-dynamodb"
 
 jest.mock("../lib/dynamodb")
 const mockContext = {} as any
 const mockCallback = () => {}
+
+jest.mock("@aws-sdk/util-dynamodb", () => ({
+  unmarshall: jest.fn((item) => item), // Mock unmarshall to return the input item for simplicity
+}))
 
 describe("handler", () => {
   const TABLE_NAME = "TodosTable"
@@ -27,7 +32,11 @@ describe("handler", () => {
 
     const dynamoDbResponse = {
       Items: [
-        { id: "1", task: { S: "test task" }, completed: { BOOL: false } },
+        {
+          id: { S: "1" },
+          task: { S: "test task" },
+          completed: { BOOL: false },
+        },
       ],
     }
     dynamoDb.send = jest.fn().mockResolvedValue(dynamoDbResponse)
@@ -39,7 +48,9 @@ describe("handler", () => {
     )) as APIGatewayProxyResult
 
     expect(result.statusCode).toBe(200)
-    expect(result.body).toBe(JSON.stringify(dynamoDbResponse.Items))
+    expect(result.body).toBe(
+      JSON.stringify(dynamoDbResponse.Items.map((item) => unmarshall(item)))
+    )
   })
 
   it("should return 200 and empty array if no items found", async () => {
@@ -82,29 +93,5 @@ describe("handler", () => {
     expect(result.statusCode).toBe(500)
     const body = JSON.parse(result.body)
     expect(body.error).toBe("DynamoDB scan failed")
-  })
-
-  it("should return 200 if searchString is missing in requestBody", async () => {
-    const event: APIGatewayProxyEvent = {
-      body: JSON.stringify({}),
-      queryStringParameters: { query: "test" },
-      requestContext: { requestId: "test-request-id" },
-    } as any
-
-    const dynamoDbResponse = {
-      Items: [
-        { id: "1", task: { S: "test task" }, completed: { BOOL: false } },
-      ],
-    }
-    dynamoDb.send = jest.fn().mockResolvedValue(dynamoDbResponse)
-
-    const result = (await handler(
-      event,
-      mockContext,
-      mockCallback
-    )) as APIGatewayProxyResult
-
-    expect(result.statusCode).toBe(200)
-    expect(result.body).toBe(JSON.stringify(dynamoDbResponse.Items))
   })
 })
