@@ -48,7 +48,6 @@ describe('TodosPage', () => {
       image: `image${i + 1}.jpg`,
     }));
 
-
     const todosPerPage = 9;
     const maxPages = Math.ceil(mockTodos.length / todosPerPage);
 
@@ -70,5 +69,27 @@ describe('TodosPage', () => {
     expect(screen.getByText('Previous')).not.toHaveClass('Mui-disabled');
   });
 
-});
+  it('changes task status from Pending to Completed when checkbox is clicked', async () => {
+    fetch.mockResponseOnce(JSON.stringify({ completed: true }));
+    render(<TodosPage todos={mockTodos} error={null} />);
 
+    const checkbox = screen.getAllByRole('checkbox')[0];
+
+    expect(checkbox).not.toBeChecked();
+
+    // Haz clic en el checkbox
+    fireEvent.click(checkbox);
+
+    expect(fetch).toHaveBeenCalledWith(
+      `${process.env.NEXT_PUBLIC_LAMBDA_API_ENDPOINT}/todos/1`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ task: 'Task 1', completed: true }),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(checkbox).toBeChecked();
+    });
+  });
+});
