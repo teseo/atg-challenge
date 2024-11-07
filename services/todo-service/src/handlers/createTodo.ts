@@ -1,44 +1,61 @@
-import { APIGatewayProxyHandler } from 'aws-lambda'
-import { v4 as uuidv4 } from 'uuid'
-import { TodoItem } from '../interfaces/todo-item'
-import { dynamoDb } from '../lib/dynamodb'
-import { PutCommand } from '@aws-sdk/lib-dynamodb'
+import { APIGatewayProxyHandler } from 'aws-lambda';
+import { v4 as uuidv4 } from 'uuid';
+import { dynamoDb } from '../lib/dynamodb';
+import { PutCommand, PutCommandInput } from '@aws-sdk/lib-dynamodb';
+import { TodoItem } from '../interfaces/todo-item';
 
-const tableName = process.env.TABLE_NAME
+const tableName = process.env.TABLE_NAME;
+
+interface requestData {
+  task: string,
+  completed: string,
+}
+
+const parseBody = (body: string | null): requestData => {
+  if (body == null) {
+    throw new Error('Request body is undefined or null');
+  }
+
+  try {
+    return JSON.parse(body);
+  } catch (e) {
+    throw new Error('Invalid JSON in request body');
+  }
+};
+
+
+const validateData = (body: requestData | null) => {
+  if (!body || !body.task) {
+    throw new Error('Task is missing in request body');
+  }
+
+  return body;
+};
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    if (event.body == null) {
-      throw new Error('Request body is undefined or null')
-    }
+    //validation & parsing
+    const parsedBody = parseBody(event.body);
+    const data = validateData(parsedBody);
 
-    let data: any
-    try {
-      data = JSON.parse(event.body)
-    } catch (e) {
-      throw new Error('Invalid JSON in request body')
-    }
-
-    if (!data || !data.task) {
-      throw new Error('Task is missing in request body')
-    }
-
-    const item: any = {
+    //business
+    const item: TodoItem = {
       id: uuidv4(),
       task: data.task,
-      completed: data.completed ? data.completed : false,
+      completed: !!data.completed,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }
+    };
 
-    const params: any = {
+    const params: PutCommandInput = {
       TableName: tableName as string,
       Item: item,
       ConditionExpression: 'attribute_not_exists(id)',
-    }
+    };
 
-    await dynamoDb.send(new PutCommand(params))
+    await dynamoDb.send(new PutCommand(params));
 
+    //output
     return {
       statusCode: 201,
       body: JSON.stringify(item),
@@ -46,9 +63,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         'Content-Type': 'application/json',
         'X-Custom-Header': 'custom value',
       },
-    }
+    };
   } catch (error) {
-    console.error('Error creating to-do item:', error)
+    console.error('Error creating to-do item:', error);
 
     return {
       statusCode: 400,
@@ -66,6 +83,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         'Content-Type': 'application/json',
         'X-Custom-Header': 'error',
       },
-    }
+    };
   }
-}
+};
